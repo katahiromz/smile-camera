@@ -1,0 +1,470 @@
+// App.tsx --- アプリのTypeScriptソース
+// Author: katahiromz
+// License: MIT
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import CanvasWithWebcam03, { ImageProcessData, CanvasWithWebcam03Handle } from './components/CanvasWithWebcam03';
+import SettingsPage, { PrivacyMode } from './components/SettingsPage';
+import { QRResult } from './libs/CodeReader';
+import { isAndroidApp, emulateInsets, saveMedia, saveMediaEx, polyfillGetUserMedia,
+         getLocalDateTimeString, drawLineAsPolygon, cloneCanvas } from './libs/utils';
+import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
+import './App.css';
+
+const IS_PRODUCTION = import.meta.env.MODE === 'production'; // 製品版か？
+const SHOW_CONFIG = true; // 設定ボタンを表示するか？
+const ENABLE_CONFIG = true; // 設定を有効にするか？
+
+// 国際化(i18n)
+import './libs/i18n.ts';
+import { useTranslation } from 'react-i18next';
+
+// アプリケーションのベースパスを取得
+const BASE_URL = import.meta.env.BASE_URL;
+
+const ENABLE_KEYS = true; // キーボード操作するか？
+const ENABLE_FACE_DETECTION = true; // 顔認識を有効にするか？
+const SHOW_CURRENT_TIME = false; // 現在の日時を表示するか？
+const BACKGROUND_IS_WHITE = false; // 背景は白か？
+
+// ダミー画像
+const dummyImageUrl = `${BASE_URL}dummy.jpg`;
+const USE_DUMMY_IMAGE = false;
+//const USE_DUMMY_IMAGE = true;
+
+// 音声のURL
+const shutterSoundUrl = `${BASE_URL}ac-camera-shutter-sound.mp3`;
+const videoStartSoundUrl = `${BASE_URL}ac-video-started.mp3`;
+const videoCompleteSoundUrl = `${BASE_URL}ac-video-completed.mp3`;
+
+if (!IS_PRODUCTION) { // 本番環境ではない場合、
+  emulateInsets(); // insetsをエミュレートする
+}
+
+// 古いブラウザのサポート(必要か？)
+polyfillGetUserMedia();
+
+// MediaPipe Face Landmarker の初期化
+let faceLandmarker: FaceLandmarker | null = null;
+let frameCount = 0; // フレーム カウンタ
+let offscreenCanvas: HTMLCanvasElement | null = null; // オフスクリーンキャンバス
+let tempBlurCanvas: HTMLCanvasElement | null = null; // ぼかし用の一時キャンバス
+const USE_FACE_DETECTION_LOCAL_FILE = true; // ローカルファイルを使って顔認識するか？
+const MIN_DETECTION_CONFIDENCE = 0.25;
+const LEFT_EYE_LEFT_CORNER = 33; // 左目の左端のランドマークインデックス
+const RIGHT_EYE_RIGHT_CORNER = 263; // 右目の右端のランドマークインデックス
+const EYE_MASK_EXTENSION_COEFFICIENT = 0.4; // 黒目線の拡張係数
+const FACE_PADDING_COEFFICIENT = 0.2; // 顔のパディング係数
+const BLACKOUT_LINE_WIDTH_COEFFICIENT = 0.1; // 黒塗りモードの線の幅係数
+const PRIVACY_MODE_KEY = 'privacyMode'; // localStorageのキー
+
+// MediaPipe Face Landmarker のセットアップ
+const initFaceDetection = async () => {
+  if (faceLandmarker || !ENABLE_FACE_DETECTION) return;
+
+  try {
+    const vision = await FilesetResolver.forVisionTasks(
+      USE_FACE_DETECTION_LOCAL_FILE ? `${BASE_URL}wasm` :
+        "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    );
+
+    faceLandmarker = await FaceLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: USE_FACE_DETECTION_LOCAL_FILE ? `${BASE_URL}face_landmarker.task` :
+          "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+        delegate: "GPU"
+      },
+      runningMode: "VIDEO",
+      numFaces: 16,
+      minFaceDetectionConfidence: MIN_DETECTION_CONFIDENCE,
+      minFacePresenceConfidence: 0.25, // 存在確認も下げる
+      minTrackingConfidence: 0.25,     // 追跡も維持しやすくする
+      outputFaceBlendshapes: false,
+      outputFacialTransformationMatrixes: false,
+    });
+  } catch (error) {
+    console.warn('MediaPipe Face Landmarker initialization failed:', error);
+    faceLandmarker = null;
+  }
+};
+
+// アプリ起動時にFace Detectionを初期化
+if (ENABLE_FACE_DETECTION) {
+  initFaceDetection();
+}
+
+// Face info type
+interface FaceInfo {
+  landmarks: NormalizedLandmark[];
+}
+
+// 顔認識をする
+const detectFaces = (canvas: HTMLCanvasElement): FaceInfo[] => {
+  try {
+    // 1フレームに1回顔検出を実行（パフォーマンス最適化）
+    frameCount++;
+    if (faceLandmarker && (frameCount % 1 === 0)) {
+      const timestamp = performance.now();
+      const results = faceLandmarker.detectForVideo(canvas, timestamp);
+
+      let faceInfo: FaceInfo[] = [];
+      if (results.faceLandmarks) {
+        for (const landmarks of results.faceLandmarks) {
+          if (!landmarks) {
+            console.warn("insufficient landmarks");
+            continue;
+          }
+
+          faceInfo.push({landmarks});
+        }
+      }
+      return faceInfo;
+    }
+    return [];
+  } catch (error) {
+    console.warn('Error during face detection:', error);
+    return [];
+  }
+};
+
+let oldFaceCount = 0; // 古い顔の個数
+let oldFaceInfo: FaceInfo[] | null = null; // 古い顔情報
+let faceDetectTime = 0; // 顔情報が更新された日時
+
+// アプリ
+function App() {
+  const { t } = useTranslation(); // 翻訳用
+  const canvasWithCamera = useRef<CanvasWithWebcam03Handle>(null);
+  const qrResultsRef = useRef<QRResult[]>([]); // QRコード読み取り結果（CanvasWithWebcam03に渡すため）
+
+  // プライバシーモードの状態管理
+  const [privacyMode, setPrivacyMode] = useState<PrivacyMode>(() => {
+    try {
+      const saved = localStorage.getItem(PRIVACY_MODE_KEY);
+      return (saved === 'eyeMask' || saved === 'faceBlur' || saved === 'blackout' || saved === 'mosaic') ? saved : 'eyeMask';
+    } catch (error) {
+      console.warn('localStorage not available:', error);
+      return 'eyeMask';
+    }
+  });
+
+  // プライバシーモードのRefを作成して常に最新の値を参照
+  const privacyModeRef = useRef(privacyMode);
+  useEffect(() => {
+    privacyModeRef.current = privacyMode;
+  }, [privacyMode]);
+
+  // 設定ページの表示状態
+  const [showSettings, setShowSettings] = useState(false);
+  const [isClosingSettings, setIsClosingSettings] = useState(false);
+
+  // プライバシーモード変更時の処理
+  const handlePrivacyModeChange = (mode: PrivacyMode) => {
+    setPrivacyMode(mode);
+    try {
+      localStorage.setItem(PRIVACY_MODE_KEY, mode);
+    } catch (error) {
+      console.warn('localStorage not available:', error);
+    }
+  };
+
+  // 画像処理関数
+  const onImageProcess = useCallback(async (data: ImageProcessData) => {
+    const { x, y, width, height, src, srcWidth, srcHeight, video, canvas, isMirrored, currentZoom, offset, showCodes } = data;
+    const ctx = canvas.getContext('2d', { alpha: false }); // 速度優先
+
+    if (!ctx || width <= 0 || height <= 0) return;
+
+    // オフスクリーンキャンバスを作成または再利用
+    if (!offscreenCanvas || offscreenCanvas.width !== canvas.width || offscreenCanvas.height !== canvas.height) {
+      offscreenCanvas = document.createElement('canvas');
+      offscreenCanvas.width = canvas.width;
+      offscreenCanvas.height = canvas.height;
+    }
+    const offscreenCtx = offscreenCanvas.getContext('2d', { alpha: false });
+
+    if (!offscreenCtx) return;
+
+    // 鏡像なら左右反転の座標変換
+    if (isMirrored) {
+      offscreenCtx.translate(width, 0);
+      offscreenCtx.scale(-1, 1);
+    }
+
+    if (currentZoom !== 1.0 || offset.x != 0 || offset.y != 0) {
+      // 背景を塗りつぶす
+      if (BACKGROUND_IS_WHITE) {
+        offscreenCtx.fillStyle = 'white';
+        offscreenCtx.fillRect(x, y, width, height);
+      } else {
+        offscreenCtx.clearRect(x, y, width, height);
+      }
+
+      // ズーム前のソースのサイズ
+      const sourceWidth = srcWidth / currentZoom;
+      const sourceHeight = srcHeight / currentZoom;
+
+      // Offsetを含めた中央基準の計算
+      const maxOffsetX = (srcWidth - sourceWidth) / 2;
+      const maxOffsetY = (srcHeight - sourceHeight) / 2;
+
+      // ソースの位置
+      const sourceX = maxOffsetX + offset.x;
+      const sourceY = maxOffsetY + offset.y;
+
+      // イメージを拡大縮小して転送
+      offscreenCtx.drawImage(
+        src, Math.round(sourceX), Math.round(sourceY), sourceWidth, sourceHeight,
+        x, y, width, height
+      );
+    } else {
+      // ズームなし、パンなし
+      offscreenCtx.drawImage(src, x, y, width, height);
+    }
+
+    offscreenCtx.setTransform(1, 0, 0, 1, 0, 0); // 座標変換を元に戻す
+
+    let minxy = Math.min(width, height);
+    let maxxy = Math.max(width, height);
+    let avgxy = (width + height) / 2;
+
+    if (ENABLE_FACE_DETECTION) { // 顔認識を有効にするか？
+      let faceInfo = detectFaces(offscreenCanvas);
+      const now = performance.now();
+
+      if (faceInfo.length !== oldFaceCount && now < faceDetectTime + 500) {
+        // 急に顔の数が変わったときは、しばらく古い情報を信用する
+        if (oldFaceInfo !== null) {
+          faceInfo = oldFaceInfo;
+        }
+      } else {
+        // 顔の個数が同じか、時間が経ったら新しい情報を信用する
+        oldFaceInfo = faceInfo;
+        oldFaceCount = faceInfo.length;
+        faceDetectTime = now;
+      }
+
+      for (const info of faceInfo) {
+        const {landmarks} = info;
+
+        // TODO: ここでlandmarksを使って顔変形を行う
+      }
+    }
+
+    if (SHOW_CURRENT_TIME) { // ちょっと日時を描画してみるか？
+      let text = getLocalDateTimeString();
+      offscreenCtx.font = `${minxy * 0.05}px monospace, san-serif`;
+      let measure = offscreenCtx.measureText(text);
+      const margin = minxy * 0.015;
+      let x0 = x + width - measure.width - margin, y0 = height - margin;
+      offscreenCtx.strokeStyle = "#000";
+      offscreenCtx.lineWidth = minxy * 0.01;
+      offscreenCtx.strokeText(text, x0, y0);
+      offscreenCtx.fillStyle = "#0f0";
+      offscreenCtx.fillText(text, x0, y0);
+    }
+
+    // オフスクリーンキャンバスからメインキャンバスに転送
+    ctx.drawImage(offscreenCanvas, 0, 0);
+  }, []);
+
+  // 設定をする
+  const doConfig = () => {
+    if (!ENABLE_CONFIG)
+      return;
+    setShowSettings(true);
+    setIsClosingSettings(false);
+  };
+
+  // 設定ページを閉じる
+  const handleCloseSettings = () => {
+    setIsClosingSettings(true);
+    // アニメーション完了後に実際に閉じる
+    setTimeout(() => {
+      setShowSettings(false);
+      setIsClosingSettings(false);
+    }, 200); // CSSアニメーション時間と合わせる
+  };
+
+  useEffect(() => {
+    //console.log(canvasWithCamera.current.canvas);
+    //canvasWithCamera.current.setZoomRatio(2);
+    //console.log(canvasWithCamera.current.getZoomRatio());
+  }, []);
+
+  // 物理の音量ボタンを押されたら撮影
+  useEffect(() => {
+    // ハンドラ関数の定義
+    const handlePhysicalVolumeButton = (e: any) => {
+      // Android側から CustomEvent("PhysicalVolumeButton", { detail: ... }) で送られてくることを想定
+      const { volumeType } = e.detail || {};
+      console.log(`Volume: ${volumeType}`);
+
+      // 音量ボタンでシャッターを切るなど
+      canvasWithCamera.current?.takePhoto?.();
+    };
+
+    // イベントリスナーの登録
+    window.addEventListener('PhysicalVolumeButton', handlePhysicalVolumeButton, { passive: false });
+
+    // クリーンアップ（コンポーネント消滅時に解除）
+    return () => {
+      window.removeEventListener('PhysicalVolumeButton', handlePhysicalVolumeButton);
+    };
+  }, []); // 初回マウント時のみ実行
+
+  useEffect(() => {
+    // Android側から呼ばれるグローバル関数を定義
+    if ((window as any).onPhysicalVolumeButton) {
+      (window as any).onPhysicalVolumeButton = () => {
+        canvasWithCamera.current?.takePhoto?.();
+      };
+    }
+    // コンポーネントがアンマウントされる時にクリーンアップ
+    return () => {
+      delete (window as any).onPhysicalVolumeButton;
+    };
+  }, []);
+
+  // キーボード操作を可能にする
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!ENABLE_KEYS) return;
+      switch(event.key) {
+      case '+': // ズームイン
+      case ';': // (日本語キーボード対応用)
+        if (!event.ctrlKey && !event.altKey) { // CtrlキーやAltキーが押されていない？
+          event.preventDefault();
+          canvasWithCamera.current?.zoomIn?.(); // ズームイン
+        }
+        break;
+      case '-': // ズームアウト
+        if (!event.ctrlKey && !event.altKey) { // CtrlキーやAltキーが押されていない？
+          event.preventDefault();
+          canvasWithCamera.current?.zoomOut?.(); // ズームアウト
+        }
+        break;
+      case ' ': // スペース キー
+        if (!event.ctrlKey && !event.altKey) { // CtrlキーやAltキーが押されていない？
+          event.preventDefault();
+          canvasWithCamera.current?.takePhoto?.(); // 写真撮影
+        }
+        break;
+      case 'Enter': // Enterキー
+        if (!event.ctrlKey && !event.altKey) { // CtrlキーやAltキーが押されていない？
+          event.preventDefault();
+          // 録画開始・録画停止を切り替える
+          if (canvasWithCamera.current?.isRecording?.()) {
+            canvasWithCamera.current?.stopRecording?.();
+          } else {
+            canvasWithCamera.current?.startRecording?.();
+          }
+        }
+        break;
+      // パン操作 (矢印)
+      case 'ArrowUp':
+        event.preventDefault();
+        canvasWithCamera.current?.panUp?.();
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        canvasWithCamera.current?.panDown?.();
+        break;
+      case 'ArrowLeft':
+        event.preventDefault();
+        canvasWithCamera.current?.panRight?.();
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        canvasWithCamera.current?.panLeft?.();
+        break;
+      default:
+        //console.log(event.key);
+        break;
+      }
+    };
+
+    document.body.addEventListener('keydown', handleKeyDown);
+    return () => document.body.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // ブラウザの「戻る」ボタンに対応する
+  useEffect(() => {
+    // 直前の履歴に現在のページを追加
+    window.history.pushState(null, '', window.location.href);
+
+    const handleBack = (event: PopStateEvent) => {
+      event.preventDefault(); // イベントのデフォルトの処理をスキップ。
+      if (showSettings) {
+        handleCloseSettings();
+      }
+    };
+
+    window.addEventListener('popstate', handleBack);
+    return () => window.removeEventListener('popstate', handleBack);
+  }, [showSettings]);
+
+  // メッセージを処理する
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      switch (e.data) {
+      case 'go_back': // Android標準の「戻る」ボタンをサポートする。
+        if (window.android) {
+          e.preventDefault(); // イベントのデフォルトの処理をスキップ。
+          try {
+            if (!showSettings)
+              window.android.finishApp?.();
+            else
+              handleCloseSettings();
+          } catch (err) { }
+        }
+        break;
+      case 'onAppResume': // Androidアプリ再開時の処理を行う。
+        if (window.android) {
+          e.preventDefault(); // イベントのデフォルトの処理をスキップ。
+          canvasWithCamera.current?.onAppResume?.();
+        }
+        break;
+      default:
+        console.log(e.data);
+        break;
+      }
+    };
+
+    window.addEventListener('message', onMessage, { passive: false });
+    return () => {
+      window.removeEventListener('message', onMessage);
+    }
+  }, [showSettings]);
+
+  return (
+    <>
+      {showSettings && (
+        <SettingsPage
+          privacyMode={privacyMode}
+          onPrivacyModeChange={handlePrivacyModeChange}
+          onBack={handleCloseSettings}
+          isClosing={isClosingSettings}
+        />
+      )}
+      <CanvasWithWebcam03
+        ref={canvasWithCamera}
+        width="100%"
+        height="100%"
+        shutterSoundUrl={shutterSoundUrl}
+        videoStartSoundUrl={videoStartSoundUrl}
+        videoCompleteSoundUrl={videoCompleteSoundUrl}
+        downloadFile={isAndroidApp ? saveMediaEx : saveMedia}
+        eventTarget={document.body}
+        autoMirror={false}
+        onImageProcess={onImageProcess}
+        dummyImageSrc={ USE_DUMMY_IMAGE ? dummyImageUrl : undefined }
+        showConfig={SHOW_CONFIG}
+        doConfig={doConfig}
+        qrResultsRef={qrResultsRef}
+        aria-label={t('camera_app')}
+      />
+    </>
+  );
+}
+
+export default App;
