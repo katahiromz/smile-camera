@@ -11,6 +11,14 @@ export type DeformMode = 'smile' | 'bigEyes' | 'funny' | 'none';
 /** 三角形の定義（ランドマークインデックスの組） */
 type TriangleIndices = [number, number, number];
 
+// MediaPipe Face Landmarkerの主要ランドマークインデックス定数
+const LEFT_MOUTH_CORNER = 61;    // 左口角
+const RIGHT_MOUTH_CORNER = 291;  // 右口角
+const LEFT_EYE_TOP = 159;        // 左目上部
+const LEFT_EYE_BOTTOM = 145;     // 左目下部
+const RIGHT_EYE_TOP = 386;       // 右目上部
+const RIGHT_EYE_BOTTOM = 374;    // 右目下部
+
 /**
  * 口周辺の三角形メッシュ定義
  * MediaPipe 468 landmarks（インデックス0-467）から口に関連する重要な三角形のみを定義
