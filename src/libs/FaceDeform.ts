@@ -13,18 +13,18 @@ type TriangleIndices = [number, number, number];
 
 /**
  * 口周辺の三角形メッシュ定義
- * MediaPipe 468 landmarksから口に関連する重要な三角形のみを定義
+ * MediaPipe 468 landmarks（インデックス0-467）から口に関連する重要な三角形のみを定義
  */
 const MOUTH_TRIANGLES: TriangleIndices[] = [
   // 左口角周辺
-  [61, 146, 91],     // 左口角から上方向
-  [61, 185, 40],     // 左口角から上唇
-  [61, 91, 181],     // 左口角下部
+  [LEFT_MOUTH_CORNER, 146, 91],     // 左口角から上方向
+  [LEFT_MOUTH_CORNER, 185, 40],     // 左口角から上唇
+  [LEFT_MOUTH_CORNER, 91, 181],     // 左口角下部
   
   // 右口角周辺
-  [291, 375, 321],   // 右口角から上方向
-  [291, 409, 270],   // 右口角から上唇
-  [291, 321, 405],   // 右口角下部
+  [RIGHT_MOUTH_CORNER, 375, 321],   // 右口角から上方向
+  [RIGHT_MOUTH_CORNER, 409, 270],   // 右口角から上唇
+  [RIGHT_MOUTH_CORNER, 321, 405],   // 右口角下部
   
   // 上唇
   [185, 40, 39],     // 上唇中央左
@@ -38,35 +38,35 @@ const MOUTH_TRIANGLES: TriangleIndices[] = [
   [314, 405, 321],   // 下唇中央右
   
   // 口の内部
-  [61, 40, 37],      // 口の左上
-  [37, 267, 291],    // 口の右上
-  [61, 37, 17],      // 口の左下
-  [37, 291, 17],     // 口の中央
-  [17, 291, 314],    // 口の右下
+  [LEFT_MOUTH_CORNER, 40, 37],      // 口の左上
+  [37, 267, RIGHT_MOUTH_CORNER],    // 口の右上
+  [LEFT_MOUTH_CORNER, 37, 17],      // 口の左下
+  [37, RIGHT_MOUTH_CORNER, 17],     // 口の中央
+  [17, RIGHT_MOUTH_CORNER, 314],    // 口の右下
 ];
 
 /**
  * 目周辺の三角形メッシュ定義
- * MediaPipe 468 landmarksから目に関連する重要な三角形のみを定義
+ * MediaPipe 468 landmarks（インデックス0-467）から目に関連する重要な三角形のみを定義
  */
 const EYE_TRIANGLES: TriangleIndices[] = [
   // 左目周辺
-  [33, 160, 159],    // 左目上部（外側）
-  [33, 158, 133],    // 左目下部（外側）
-  [160, 159, 158],   // 左目上部（中央）
-  [159, 158, 157],   // 左目中央
-  [158, 157, 133],   // 左目下部（中央）
-  [159, 145, 157],   // 左目上部（内側）
-  [157, 145, 133],   // 左目下部（内側）
+  [33, 160, LEFT_EYE_TOP],    // 左目上部（外側）
+  [33, 158, 133],             // 左目下部（外側）
+  [160, LEFT_EYE_TOP, 158],   // 左目上部（中央）
+  [LEFT_EYE_TOP, 158, 157],   // 左目中央
+  [158, 157, 133],            // 左目下部（中央）
+  [LEFT_EYE_TOP, LEFT_EYE_BOTTOM, 157],   // 左目上部（内側）
+  [157, LEFT_EYE_BOTTOM, 133],            // 左目下部（内側）
   
   // 右目周辺
-  [263, 387, 386],   // 右目上部（外側）
-  [263, 385, 362],   // 右目下部（外側）
-  [387, 386, 385],   // 右目上部（中央）
-  [386, 385, 384],   // 右目中央
-  [385, 384, 362],   // 右目下部（中央）
-  [386, 374, 384],   // 右目上部（内側）
-  [384, 374, 362],   // 右目下部（内側）
+  [263, 387, RIGHT_EYE_TOP],   // 右目上部（外側）
+  [263, 385, 362],             // 右目下部（外側）
+  [387, RIGHT_EYE_TOP, 385],   // 右目上部（中央）
+  [RIGHT_EYE_TOP, 385, 384],   // 右目中央
+  [385, 384, 362],             // 右目下部（中央）
+  [RIGHT_EYE_TOP, RIGHT_EYE_BOTTOM, 384],   // 右目上部（内側）
+  [384, RIGHT_EYE_BOTTOM, 362],             // 右目下部（内側）
 ];
 
 /**
@@ -90,11 +90,7 @@ const calculateSmileDeform = (
 ): NormalizedLandmark[] => {
   const deformed = [...landmarks];
   
-  // 口角のインデックス
-  const LEFT_MOUTH_CORNER = 61;   // 左口角
-  const RIGHT_MOUTH_CORNER = 291; // 右口角
-  
-  // 口角を上に移動（笑顔効果）
+  // 口角のインデックスは定数から取得
   const liftAmount = 0.01 * intensity; // 正規化座標での移動量
   
   deformed[LEFT_MOUTH_CORNER] = {
@@ -120,14 +116,7 @@ const calculateBigEyesDeform = (
 ): NormalizedLandmark[] => {
   const deformed = [...landmarks];
   
-  // 左目の主要ランドマーク
-  const LEFT_EYE_TOP = 159;    // 左目上部
-  const LEFT_EYE_BOTTOM = 145; // 左目下部
-  
-  // 右目の主要ランドマーク
-  const RIGHT_EYE_TOP = 386;    // 右目上部
-  const RIGHT_EYE_BOTTOM = 374; // 右目下部
-  
+  // 目のランドマークは定数から取得
   const expandAmount = 0.005 * intensity; // 正規化座標での拡大量
   
   // 左目の上下を拡大
@@ -165,9 +154,7 @@ const calculateFunnyDeform = (
 ): NormalizedLandmark[] => {
   const deformed = [...landmarks];
   
-  // 口角を横に広げる
-  const LEFT_MOUTH_CORNER = 61;
-  const RIGHT_MOUTH_CORNER = 291;
+  // 口角と目のランドマークは定数から取得
   const widthExpand = 0.015 * intensity;
   
   deformed[LEFT_MOUTH_CORNER] = {
@@ -181,10 +168,6 @@ const calculateFunnyDeform = (
   };
   
   // 目を縦に伸ばす（bigEyesより強め）
-  const LEFT_EYE_TOP = 159;
-  const LEFT_EYE_BOTTOM = 145;
-  const RIGHT_EYE_TOP = 386;
-  const RIGHT_EYE_BOTTOM = 374;
   const eyeExpandAmount = 0.008 * intensity;
   
   deformed[LEFT_EYE_TOP] = {
@@ -261,10 +244,16 @@ export const deformFace = (
   // 対象となる三角形リスト（口と目のみ）
   const targetTriangles = [...MOUTH_TRIANGLES, ...EYE_TRIANGLES];
   
+  // MediaPipe Face Landmarkerは468点（インデックス0-467）のランドマークを返す
   // ランドマークの範囲チェック（事前にバリデーション）
+  if (landmarks.length !== 468) {
+    console.warn(`Expected 468 landmarks, got ${landmarks.length}`);
+    return;
+  }
+  
   const maxIndex = Math.max(...targetTriangles.flat());
   if (maxIndex >= landmarks.length) {
-    console.warn('Invalid landmark indices in triangles');
+    console.warn(`Invalid landmark index ${maxIndex} for landmarks array of length ${landmarks.length}`);
     return;
   }
   
