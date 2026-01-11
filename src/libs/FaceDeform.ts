@@ -33,11 +33,9 @@ const MOUTH_TRIANGLES: TriangleIndices[] = [
   [267, 269, 409],   // 上唇右側
   
   // 下唇
-  [61, 146, 91],     // 下唇左側（口角接続）
   [91, 181, 84],     // 下唇中央左
   [181, 17, 314],    // 下唇中央
   [314, 405, 321],   // 下唇中央右
-  [321, 375, 291],   // 下唇右側（口角接続）
   
   // 口の内部
   [61, 40, 37],      // 口の左上
@@ -125,7 +123,6 @@ const calculateBigEyesDeform = (
   // 左目の主要ランドマーク
   const LEFT_EYE_TOP = 159;    // 左目上部
   const LEFT_EYE_BOTTOM = 145; // 左目下部
-  const LEFT_EYE_CENTER = 468; // 中心は計算で求める（代替として33を使用）
   
   // 右目の主要ランドマーク
   const RIGHT_EYE_TOP = 386;    // 右目上部
@@ -261,6 +258,16 @@ export const deformFace = (
   const width = canvas.width;
   const height = canvas.height;
   
+  // 対象となる三角形リスト（口と目のみ）
+  const targetTriangles = [...MOUTH_TRIANGLES, ...EYE_TRIANGLES];
+  
+  // ランドマークの範囲チェック（事前にバリデーション）
+  const maxIndex = Math.max(...targetTriangles.flat());
+  if (maxIndex >= landmarks.length) {
+    console.warn('Invalid landmark indices in triangles');
+    return;
+  }
+  
   // 元画像をクローン（変形前の状態を保持）
   const originalCanvas = document.createElement('canvas');
   originalCanvas.width = width;
@@ -269,15 +276,8 @@ export const deformFace = (
   if (!originalCtx) return;
   originalCtx.drawImage(canvas, 0, 0);
   
-  // 対象となる三角形リスト（口と目のみ）
-  const targetTriangles = [...MOUTH_TRIANGLES, ...EYE_TRIANGLES];
-  
   // 各三角形に対してアフィン変換を適用
   for (const [i0, i1, i2] of targetTriangles) {
-    // ランドマークが範囲外の場合はスキップ
-    if (i0 >= landmarks.length || i1 >= landmarks.length || i2 >= landmarks.length) {
-      continue;
-    }
     
     // 元の三角形の頂点
     const srcTri: FaceTriangle = [
