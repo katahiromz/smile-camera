@@ -8,6 +8,7 @@ import { QRResult } from './libs/CodeReader';
 import { isAndroidApp, emulateInsets, saveMedia, saveMediaEx, polyfillGetUserMedia,
          getLocalDateTimeString, drawLineAsPolygon, cloneCanvas } from './libs/utils';
 import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { deformFace } from './libs/FaceDeform';
 import './App.css';
 
 const IS_PRODUCTION = import.meta.env.MODE === 'production'; // 製品版か？
@@ -246,7 +247,9 @@ function App() {
       for (const info of faceInfo) {
         const {landmarks} = info;
 
-        // TODO: ここでlandmarksを使って顔変形を行う
+        // 顔変形を適用（口と目の周辺のみ）
+        // 現在は'smile'モードで固定、強度は0.7
+        deformFace(offscreenCtx, offscreenCanvas, landmarks, 'funny', 0.7);
       }
     }
 
