@@ -1,7 +1,7 @@
 
 export type FaceVertexTriangle = [number, number, number];
 
-export let faceMesh: FaceVertexTriangle[] = [
+export const FACE_MESH: FaceVertexTriangle[] = [
     [127,  34, 139],
     [ 11,   0,  37],
     [232, 231, 120],
