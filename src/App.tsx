@@ -8,7 +8,7 @@ import { QRResult } from './libs/CodeReader';
 import { isAndroidApp, emulateInsets, saveMedia, saveMediaEx, polyfillGetUserMedia,
          getLocalDateTimeString, drawLineAsPolygon, cloneCanvas } from './libs/utils';
 import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { deformFace } from './libs/FaceDeform';
+import { faceMesh } from './libs/faceMesh';
 import './App.css';
 
 const IS_PRODUCTION = import.meta.env.MODE === 'production'; // 製品版か？
@@ -136,6 +136,7 @@ function App() {
   const { t } = useTranslation(); // 翻訳用
   const canvasWithCamera = useRef<CanvasWithWebcam03Handle>(null);
   const qrResultsRef = useRef<QRResult[]>([]); // QRコード読み取り結果（CanvasWithWebcam03に渡すため）
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
   // プライバシーモードの状態管理
   const [privacyMode, setPrivacyMode] = useState<PrivacyMode>(() => {
@@ -247,28 +248,48 @@ function App() {
       for (const info of faceInfo) {
         const {landmarks} = info;
 
-        // 顔変形を適用（口と目の周辺のみ）
-        // 現在は'smile'モードで固定、強度は0.7
-        deformFace(offscreenCtx, offscreenCanvas, landmarks, 'funny', 0.7);
-      }
-    }
+        // 描画設定
+        offscreenCtx.fillStyle = "white";       // 点の色
+        offscreenCtx.font = "10px Arial";      // 番号のフォントサイズ
+        offscreenCtx.lineWidth = 1;
 
-    if (SHOW_CURRENT_TIME) { // ちょっと日時を描画してみるか？
-      let text = getLocalDateTimeString();
-      offscreenCtx.font = `${minxy * 0.05}px monospace, san-serif`;
-      let measure = offscreenCtx.measureText(text);
-      const margin = minxy * 0.015;
-      let x0 = x + width - measure.width - margin, y0 = height - margin;
-      offscreenCtx.strokeStyle = "#000";
-      offscreenCtx.lineWidth = minxy * 0.01;
-      offscreenCtx.strokeText(text, x0, y0);
-      offscreenCtx.fillStyle = "#0f0";
-      offscreenCtx.fillText(text, x0, y0);
+        // ランドマークの座標は 0.0 〜 1.0 に正規化されているため、
+        // キャンバスの実際のサイズ（width, height）を掛けて座標を算出する
+        const mappedLandmarks = landmarks.map((item) => {
+          return { x: item.x * width, y: item.y * height };
+        });
+
+        // メッシュを描く
+        offscreenCtx.strokeStyle = "green";
+        faceMesh.forEach((item) => {
+          const [i0, i1, i2] = item;
+          offscreenCtx.beginPath();
+          offscreenCtx.moveTo(mappedLandmarks[i0].x, mappedLandmarks[i0].y);
+          offscreenCtx.lineTo(mappedLandmarks[i1].x, mappedLandmarks[i1].y);
+          offscreenCtx.lineTo(mappedLandmarks[i2].x, mappedLandmarks[i2].y);
+          offscreenCtx.closePath();
+          offscreenCtx.stroke();
+        });
+
+        // 頂点を描く
+        mappedLandmarks.forEach((landmark, index) => {
+          const px = landmark.x;
+          const py = landmark.y;
+
+          // 1. 頂点（小さな円）を描画
+          offscreenCtx.beginPath();
+          offscreenCtx.arc(px, py, 1.5, 0, 2 * Math.PI);
+          offscreenCtx.fill();
+
+          // 2. 頂点番号を描画
+          offscreenCtx.fillText(index.toString(), px + 2, py - 2);
+        });
+      }
     }
 
     // オフスクリーンキャンバスからメインキャンバスに転送
     ctx.drawImage(offscreenCanvas, 0, 0);
-  }, []);
+  }, [selectedIndex]);
 
   // 設定をする
   const doConfig = () => {
@@ -366,7 +387,7 @@ function App() {
       // パン操作 (矢印)
       case 'ArrowUp':
         event.preventDefault();
-        canvasWithCamera.current?.panUp?.();
+        //canvasWithCamera.current?.panUp?.();
         break;
       case 'ArrowDown':
         event.preventDefault();

@@ -43,19 +43,19 @@ export const getAffineTransform = (srcTri: FaceTriangle, destTri: FaceTriangle):
 
 /**
  * アフィン変換を伴うイメージ転送。
- * @param ctx 描画対象のコンテキスト。
- * @param srcTri 転送元の三角形。
- * @param destTri 転送先の三角形。
- * @param doTransfer 実際に転送を行うコールバック。
+ * @param ctx 描画先のコンテキスト。
+ * @param tri 転送先の三角形。
+ * @param ctxSrc 描画元のコンテキスト。
+ * @param triSrc 転送元の三角形。
  */
 export const transferWithAffineTransform = (
   ctx: CanvasRenderingContext2D,
-  srcTri: FaceTriangle,
-  destTri: FaceTriangle,
-  doTransfer: (ctx: CanvasRenderingContext2D) => void
+  tri: FaceTriangle,
+  ctxSrc: CanvasRenderingContext2D,
+  triSrc: FaceTriangle
 ): void => {
   // アフィン変換を計算
-  const t = getAffineTransform(srcTri, destTri);
+  const t = getAffineTransform(triSrc, tri);
   if (!t) return; // 無効な変換
 
   // クリッピング状態を保存
@@ -63,18 +63,17 @@ export const transferWithAffineTransform = (
 
   // クリッピング（ターゲット三角形のみ描画）
   ctx.beginPath();
-  ctx.moveTo(destTri[0][0], destTri[0][1]);
-  ctx.lineTo(destTri[1][0], destTri[1][1]);
-  ctx.lineTo(destTri[2][0], destTri[2][1]);
+  ctx.moveTo(tri[0][0], tri[0][1]);
+  ctx.lineTo(tri[1][0], tri[1][1]);
+  ctx.lineTo(tri[2][0], tri[2][1]);
   ctx.closePath();
   ctx.clip();
 
   // アフィン変換適用（元画像の三角形領域を写す）
-  // setTransform(a, b, c, d, e, f) に合わせる
   ctx.setTransform(t[0], t[3], t[1], t[4], t[2], t[5]);
 
   // イメージを転送
-  doTransfer(ctx);
+  ctx.drawImage(ctxSrc.canvas, 0, 0);
 
   // クリッピング状態を復元
   ctx.restore();
