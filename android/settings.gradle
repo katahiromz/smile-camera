@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name = "privacy-camera"
+rootProject.name = "smile-camera"
