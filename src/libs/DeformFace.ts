@@ -26,7 +26,9 @@ const drawFaceFeat = (ctx, x, y, radius) => {
   ctx.fill();
 };
 
+// 顔変形を行う関数
 export const deformFace = (ctx, faceInfo) => {
+  // キャンバスをオフスクリーンにコピー
   let canvas = ctx.canvas;
   let width = canvas.width, height = canvas.height;
   if (!offscreenCanvas || offscreenCanvas.width < width || offscreenCanvas.height < height) {
@@ -34,7 +36,6 @@ export const deformFace = (ctx, faceInfo) => {
     offscreenCanvas.width = canvas.width;
     offscreenCanvas.height = canvas.height;
   }
-
   const offscreenCtx = offscreenCanvas.getContext('2d', { alpha: false });
   offscreenCtx.drawImage(canvas, 0, 0);
 
@@ -43,6 +44,7 @@ export const deformFace = (ctx, faceInfo) => {
   offscreenCtx.font = "14px Arial";      // 番号のフォントサイズ
   offscreenCtx.lineWidth = 1;
 
+  // 認識された各顔について
   for (const info of faceInfo) {
     const {landmarks} = info;
 
@@ -183,9 +185,10 @@ export const deformFace = (ctx, faceInfo) => {
         return { x: landmark.x + offset.x, y: landmark.y + offset.y };
       });
 
-      // メッシュの三角形を転送
+      // メッシュの三角形群を転送
       FACE_MESH.forEach((item) => {
         const [i0, i1, i2] = item;
+
         // 変形前の三角形
         const triSrc: FaceTriangle = [
           [mappedLandmarks[i0].x, mappedLandmarks[i0].y],
@@ -200,9 +203,11 @@ export const deformFace = (ctx, faceInfo) => {
           [deformedLandmarks[i2].x, deformedLandmarks[i2].y]
         ];
 
+        // 三角形を転送
         transferWithAffineTransform(offscreenCtx, tri, ctx, triSrc);
 
         if (false) {
+          // 変形後の三角形を描画
           offscreenCtx.beginPath();
           offscreenCtx.moveTo(tri[0][0], tri[0][1]);
           offscreenCtx.lineTo(tri[1][0], tri[1][1]);
@@ -219,5 +224,6 @@ export const deformFace = (ctx, faceInfo) => {
     }
   }
 
+  // 元のキャンバスへ転送
   ctx.drawImage(offscreenCanvas, 0, 0);
 };
