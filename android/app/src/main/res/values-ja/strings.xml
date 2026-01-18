@@ -12,7 +12,7 @@
     <string name="needs_camera_and_storage">このアプリはカメラ、マイク、ストレージの権限が必要です。</string>
 
     <!-- main -->
-    <string name="app_name">笑顔カメラ</string>
+    <string name="app_name">ほほえみの鏡</string>
     <string name="web_view">ウェブ ビュー</string>
     <string name="progress_bar">プログレス バー</string>
     <string name="now_starting">カメラを起動中...</string>

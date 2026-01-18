@@ -12,7 +12,7 @@
     <string name="needs_camera_and_storage">This app requires camera, microphone, and storage permissions.</string>
 
     <!-- main -->
-    <string name="app_name">Smile Camera</string>
+    <string name="app_name">The Smile Mirror</string>
     <string name="web_view">WebView</string>
     <string name="progress_bar">ProgressBar</string>
     <string name="now_starting">Loading camera...</string>
