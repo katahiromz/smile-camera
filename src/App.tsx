@@ -8,8 +8,7 @@ import { QRResult } from './libs/CodeReader';
 import { isAndroidApp, emulateInsets, saveMedia, saveMediaEx, polyfillGetUserMedia,
          getLocalDateTimeString, drawLineAsPolygon, cloneCanvas } from './libs/utils';
 import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { FACE_MESH } from './libs/faceMesh';
-import { MESH_ANNOTATIONS } from './libs/keypoints.ts';
+import { deformFace } from './libs/DeformFace';
 import './App.css';
 
 const IS_PRODUCTION = import.meta.env.MODE === 'production'; // 製品版か？
@@ -246,63 +245,8 @@ function App() {
         faceDetectTime = now;
       }
 
-      for (const info of faceInfo) {
-        const {landmarks} = info;
-
-        // 描画設定
-        offscreenCtx.fillStyle = "white";       // 点の色
-        offscreenCtx.font = "10px Arial";      // 番号のフォントサイズ
-        offscreenCtx.lineWidth = 1;
-
-        // ランドマークの座標は 0.0 〜 1.0 に正規化されているため、
-        // キャンバスの実際のサイズ（width, height）を掛けて座標を算出する
-        const mappedLandmarks = landmarks.map((item) => {
-          return { x: item.x * width, y: item.y * height };
-        });
-
-        // メッシュを描く
-        if (true) {
-          offscreenCtx.strokeStyle = "green";
-          FACE_MESH.forEach((item) => {
-            const [i0, i1, i2] = item;
-            offscreenCtx.beginPath();
-            offscreenCtx.moveTo(mappedLandmarks[i0].x, mappedLandmarks[i0].y);
-            offscreenCtx.lineTo(mappedLandmarks[i1].x, mappedLandmarks[i1].y);
-            offscreenCtx.lineTo(mappedLandmarks[i2].x, mappedLandmarks[i2].y);
-            offscreenCtx.closePath();
-            offscreenCtx.stroke();
-          });
-        }
-
-        if (true) {
-          // 頂点を描く
-          mappedLandmarks.forEach((landmark, index) => {
-            const px = landmark.x, py = landmark.y;
-
-            if (true || index == MESH_ANNOTATIONS.midwayBetweenEyes) {
-              // 1. 頂点（小さな円）を描画
-              offscreenCtx.beginPath();
-              offscreenCtx.arc(px, py, 1.5, 0, 2 * Math.PI);
-              offscreenCtx.fill();
-
-              // 2. 頂点番号を描画
-              offscreenCtx.fillText(index.toString(), px + 2, py - 2);
-            }
-          });
-        }
-
-        offscreenCtx.beginPath();
-        let first = true;
-        MESH_ANNOTATIONS.rightEyeUpper2.forEach((item) => {
-          if (first)
-            offscreenCtx.moveTo(mappedLandmarks[item].x, mappedLandmarks[item].y);
-          else
-            offscreenCtx.lineTo(mappedLandmarks[item].x, mappedLandmarks[item].y);
-          first = false;
-        });
-        offscreenCtx.strokeStyle = "red";
-        offscreenCtx.stroke();
-      }
+      // 顔変形を実施
+      deformFace(offscreenCtx, faceInfo);
     }
 
     // オフスクリーンキャンバスからメインキャンバスに転送
@@ -502,7 +446,6 @@ function App() {
         dummyImageSrc={ USE_DUMMY_IMAGE ? dummyImageUrl : undefined }
         showConfig={SHOW_CONFIG}
         doConfig={doConfig}
-        qrResultsRef={qrResultsRef}
         aria-label={t('camera_app')}
       />
     </>
