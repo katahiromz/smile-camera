@@ -23,6 +23,7 @@ This is a camera app that uses facial recognition to create smiling faces and ta
 - Faces with paint on them, faces wearing masks, faces from manga or anime, or animal faces may not be recognized.
 - Faces that move violently or suddenly appear may not be recognized.
 - If face recognition is not possible, the face may be displayed as is.
+- This camera feature is optimized for streaming.
 
 ## Copyright Notice and License
 

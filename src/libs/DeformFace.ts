@@ -152,10 +152,12 @@ export const deformFace = (ctx, faceInfo) => {
     if (true) {
       // 重力（変形の中心点と移動ベクトル）の設定
       let gravity = [
-        { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, ax: dx0 * 0.03 - dx1 * 0.05, ay: dy0 * 0.03 - dy1 * 0.05 },
-        { x: mappedLandmarks[43].x, y: mappedLandmarks[43].y, ax: dx0 * 0.03 - dx1 * 0.05, ay: dy0 * 0.03 - dy1 * 0.05 },
-        { x: mappedLandmarks[291].x, y: mappedLandmarks[291].y, ax: dx0 * 0.03 + dx1 * 0.05, ay: dy0 * 0.03 + dy1 * 0.05 },
-        { x: mappedLandmarks[273].x, y: mappedLandmarks[273].y, ax: dx0 * 0.03 + dx1 * 0.05, ay: dy0 * 0.03 + dy1 * 0.05 },
+        { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, ax: dx0 * 0.09 - dx1 * 0.10, ay: dy0 * 0.09 - dy1 * 0.10 },
+        { x: mappedLandmarks[43].x, y: mappedLandmarks[43].y, ax: dx0 * 0.09 - dx1 * 0.10, ay: dy0 * 0.09 - dy1 * 0.10 },
+        { x: mappedLandmarks[291].x, y: mappedLandmarks[291].y, ax: dx0 * 0.09 + dx1 * 0.10, ay: dy0 * 0.09 + dy1 * 0.10 },
+        { x: mappedLandmarks[273].x, y: mappedLandmarks[273].y, ax: dx0 * 0.09 + dx1 * 0.10, ay: dy0 * 0.09 + dy1 * 0.10 },
+        { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, ax: -dx0 * 0.015, ay: -dy0 * 0.015 },
+        { x: mappedLandmarks[17].x, y: mappedLandmarks[17].y, ax: -dx0 * 0.02, ay: -dy0 * 0.02 },
       ];
       const m = 6;
 
