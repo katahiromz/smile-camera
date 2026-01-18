@@ -151,36 +151,29 @@ export const deformFace = (ctx, faceInfo) => {
       offscreenCtx.stroke();
     }
 
+    let deformedLandmarks = null;
+    // 重力（変形の中心点と移動ベクトル）の設定
+    const factor = 2;
+    const gravity = [
+      { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, radius: Math.abs(dy0) * 0.06, ax: (dx0 * 0.015 - dx1 * 0.015)*factor, ay: (dy0 * 0.015 - dy1 * 0.015)*factor },
+      { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, radius: Math.abs(dy0) * 0.03, ax: (dx0 * 0.015 - dx1 * 0.012)*factor, ay: (dy0 * 0.015 - dy1 * 0.012)*factor },
+      { x: mappedLandmarks[291].x, y: mappedLandmarks[291].y, radius: Math.abs(dy0) * 0.06, ax: (dx0 * 0.015 + dx1 * 0.015)*factor, ay: (dy0 * 0.015 + dy1 * 0.015)*factor },
+      { x: mappedLandmarks[291].x, y: mappedLandmarks[291].y, radius: Math.abs(dy0) * 0.03, ax: (dx0 * 0.015 + dx1 * 0.012)*factor, ay: (dy0 * 0.015 + dy1 * 0.012)*factor },
+      { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, radius: Math.abs(dy0) * 0.2, ax: -dx0 * 0.01, ay: -dy0 * 0.01 },
+      { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, radius: Math.abs(dy0) * 0.1, ax: -dx0 * 0.01, ay: -dy0 * 0.01 },
+    ];
     if (true) {
-      // 重力（変形の中心点と移動ベクトル）の設定
-      let gravity = [
-        { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, ax: dx0 * 0.09 - dx1 * 0.10, ay: dy0 * 0.09 - dy1 * 0.10 },
-        { x: mappedLandmarks[43].x, y: mappedLandmarks[43].y, ax: dx0 * 0.09 - dx1 * 0.10, ay: dy0 * 0.09 - dy1 * 0.10 },
-        { x: mappedLandmarks[291].x, y: mappedLandmarks[291].y, ax: dx0 * 0.09 + dx1 * 0.10, ay: dy0 * 0.09 + dy1 * 0.10 },
-        { x: mappedLandmarks[273].x, y: mappedLandmarks[273].y, ax: dx0 * 0.09 + dx1 * 0.10, ay: dy0 * 0.09 + dy1 * 0.10 },
-        { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, ax: -dx0 * 0.015, ay: -dy0 * 0.015 },
-        { x: mappedLandmarks[17].x, y: mappedLandmarks[17].y, ax: -dx0 * 0.02, ay: -dy0 * 0.02 },
-      ];
-      const m = 6;
-
-      // 影響範囲の定数。顔の幅の半分程度に設定すると滑らかになります
-      const sigma = faceWidth * 0.5;
-      const sigma2 = sigma * sigma;
-
       // 変形後の座標を格納する配列を作成
-      const deformedLandmarks = mappedLandmarks.map(landmark => {
+      deformedLandmarks = mappedLandmarks.map(landmark => {
         let offset = { x: 0, y: 0 };
         gravity.forEach(point => {
           const dx = landmark.x - point.x;
           const dy = landmark.y - point.y;
-          const dist2 = dx * dx + dy * dy;
-          if (dist2 > faceWidth * 0.3)
-            return { x: landmark.x, y: landmark.y };
-
-          // ガウス関数的な減衰を使うと、メッシュが急激に折れ曲がらず破綻しにくい
-          const weight = Math.exp(-dist2 / (2 * sigma2));
-          offset.x += point.ax * weight;
-          offset.y += point.ay * weight;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < point.radius) {
+            offset.x += point.ax;
+            offset.y += point.ay;
+          }
         });
         return { x: landmark.x + offset.x, y: landmark.y + offset.y };
       });
@@ -204,7 +197,18 @@ export const deformFace = (ctx, faceInfo) => {
         ];
 
         // 三角形を転送
-        transferWithAffineTransform(offscreenCtx, tri, ctx, triSrc);
+        if (true) transferWithAffineTransform(offscreenCtx, tri, ctx, triSrc);
+
+        if (false) {
+          // 変形前の三角形を描画
+          offscreenCtx.beginPath();
+          offscreenCtx.moveTo(triSrc[0][0], triSrc[0][1]);
+          offscreenCtx.lineTo(triSrc[1][0], triSrc[1][1]);
+          offscreenCtx.lineTo(triSrc[2][0], triSrc[2][1]);
+          offscreenCtx.closePath();
+          offscreenCtx.strokeStyle = "red";
+          offscreenCtx.stroke();
+        }
 
         if (false) {
           // 変形後の三角形を描画
@@ -213,7 +217,7 @@ export const deformFace = (ctx, faceInfo) => {
           offscreenCtx.lineTo(tri[1][0], tri[1][1]);
           offscreenCtx.lineTo(tri[2][0], tri[2][1]);
           offscreenCtx.closePath();
-          offscreenCtx.strokeStyle = "black";
+          offscreenCtx.strokeStyle = "green";
           offscreenCtx.stroke();
         }
       });
@@ -221,6 +225,21 @@ export const deformFace = (ctx, faceInfo) => {
       // 顔のほてりを表現
       drawFaceFeat(offscreenCtx, mappedLandmarks[205].x, mappedLandmarks[205].y, faceWidth * 0.2);
       drawFaceFeat(offscreenCtx, mappedLandmarks[425].x, mappedLandmarks[425].y, faceWidth * 0.2);
+
+      if (false) {
+        offscreenCtx.lineWidth = 4;
+        gravity.forEach(point => {
+          // 1. 頂点（小さな円）を描画
+          offscreenCtx.beginPath();
+          offscreenCtx.arc(point.x, point.y, point.radius, 0, 2 * Math.PI);
+          offscreenCtx.stroke();
+          offscreenCtx.beginPath();
+          offscreenCtx.moveTo(point.x, point.y, point.radius, 0, 2 * Math.PI);
+          offscreenCtx.lineTo(point.x + point.ax, point.y + point.ay, point.radius, 0, 2 * Math.PI);
+          offscreenCtx.strokeStyle = "green";
+          offscreenCtx.stroke();
+        });
+      }
     }
   }
 
