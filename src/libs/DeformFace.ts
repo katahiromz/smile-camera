@@ -159,8 +159,8 @@ export const deformFace = (ctx, faceInfo) => {
       { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, radius: Math.abs(dy0) * 0.03, ax: (dx0 * 0.015 - dx1 * 0.012)*factor, ay: (dy0 * 0.015 - dy1 * 0.012)*factor },
       { x: mappedLandmarks[291].x, y: mappedLandmarks[291].y, radius: Math.abs(dy0) * 0.06, ax: (dx0 * 0.015 + dx1 * 0.015)*factor, ay: (dy0 * 0.015 + dy1 * 0.015)*factor },
       { x: mappedLandmarks[291].x, y: mappedLandmarks[291].y, radius: Math.abs(dy0) * 0.03, ax: (dx0 * 0.015 + dx1 * 0.012)*factor, ay: (dy0 * 0.015 + dy1 * 0.012)*factor },
-      { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, radius: Math.abs(dy0) * 0.2, ax: -dx0 * 0.01, ay: -dy0 * 0.01 },
-      { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, radius: Math.abs(dy0) * 0.1, ax: -dx0 * 0.01, ay: -dy0 * 0.01 },
+      { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, radius: Math.abs(dy0) * 0.08, ax: -dx0 * 0.01, ay: -dy0 * 0.01 },
+      { x: mappedLandmarks[0].x, y: mappedLandmarks[0].y, radius: Math.abs(dy0) * 0.03, ax: -dx0 * 0.01, ay: -dy0 * 0.01 },
     ];
     if (true) {
       // 変形後の座標を格納する配列を作成

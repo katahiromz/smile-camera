@@ -57,7 +57,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         <hr />
         <div className="setting-item">
           <label htmlFor="privacy-mode">{t('privacy_mode')}</label>
-          <select 
+          <select
             id="privacy-mode" 
             value={privacyMode}
             onChange={handleModeChange}
