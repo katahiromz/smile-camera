@@ -264,19 +264,6 @@ export const deformFace = (ctx, faceInfo) => {
         ax: 20 * ((dx0 * 0.1) + (dx1 * 0.1)) / (2 + len2),
         ay: 20 * ((dy0 * 0.1) + (dy1 * 0.1)) / (2 + len2)
       },
-      // --- 頬の押し上げ ---
-      // 右頬 (205付近)
-      { 
-        x: mappedLandmarks[205].x, y: mappedLandmarks[205].y, 
-        radius: faceWidth * 0.13,
-        ax: (dx0 * 0.08) * smileFactor, ay: (dy0 * 0.08) * smileFactor
-      },
-      // 左頬 (425付近)
-      { 
-        x: mappedLandmarks[425].x, y: mappedLandmarks[425].y, 
-        radius: faceWidth * 0.13,
-        ax: (dx0 * 0.08) * smileFactor, ay: (dy0 * 0.08) * smileFactor
-      },
     ];
 
     let deformedLandmarks;
