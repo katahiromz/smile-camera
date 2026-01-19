@@ -11,6 +11,36 @@ interface FaceInfo {
 
 let offscreenCanvas = null;
 
+const FACE_MESH_2 = [...FACE_MESH,
+  [33, 246, 7],
+  [7, 246, 163],
+  [246, 163, 161],
+  [161, 160, 144],
+  [144, 160, 145],
+  [160, 145, 159],
+  [159, 145, 153],
+  [159, 153, 158],
+  [158, 153, 154],
+  [158, 154, 157],
+  [157, 154, 155],
+  [155, 157, 173],
+  [173, 155, 133],
+  [362, 398, 382],
+  [398, 382, 384],
+  [382, 384, 381],
+  [381, 384, 385],
+  [385, 381, 380],
+  [380, 386, 385],
+  [386, 380, 374],
+  [374, 386, 387],
+  [387, 374, 373],
+  [373, 387, 388],
+  [388, 373, 390],
+  [390, 388, 466],
+  [466, 390, 249],
+  [466, 249, 263],
+];
+
 // 顔のほてりを表現
 const drawFaceFeat = (ctx, x, y, radius) => {
   // 放射状のグラデーションを作る
@@ -71,8 +101,9 @@ export const deformFace = (ctx, faceInfo) => {
 
     // メッシュを描く
     if (false) {
+      offscreenCtx.lineWidth = 2;
       offscreenCtx.strokeStyle = "green";
-      FACE_MESH.forEach((item) => {
+      FACE_MESH_2.forEach((item) => {
         const [i0, i1, i2] = item;
         offscreenCtx.beginPath();
         offscreenCtx.moveTo(mappedLandmarks[i0].x, mappedLandmarks[i0].y);
@@ -169,6 +200,19 @@ export const deformFace = (ctx, faceInfo) => {
     // 重力（変形の中心点と移動ベクトル）の設定
     const smileFactor = 0.5; // 笑顔の強さ。適宜調整してください。
     const gravity = [
+      // --- 目の下の押し上げ（三日月目） ---
+      // 右目下 (145付近)
+      {
+        x: mappedLandmarks[145].x, y: mappedLandmarks[145].y,
+        radius: faceWidth * 0.08,
+        ax: (-dx0 * 0.03) * smileFactor, ay: (-dy0 * 0.03) * smileFactor
+      },
+      // 左目下 (374付近)
+      {
+        x: mappedLandmarks[374].x, y: mappedLandmarks[374].y,
+        radius: faceWidth * 0.08,
+        ax: (-dx0 * 0.03) * smileFactor, ay: (-dy0 * 0.03) * smileFactor
+      },
       // --- 口角の変形 ---
       // 右口角 (61) を外側斜め上へ
       {
@@ -186,28 +230,15 @@ export const deformFace = (ctx, faceInfo) => {
       // 右頬 (205付近)
       { 
         x: mappedLandmarks[205].x, y: mappedLandmarks[205].y, 
-        radius: faceWidth * 0.15,
+        radius: faceWidth * 0.13,
         ax: (dx0 * 0.08) * smileFactor, ay: (dy0 * 0.08) * smileFactor
       },
       // 左頬 (425付近)
       { 
         x: mappedLandmarks[425].x, y: mappedLandmarks[425].y, 
-        radius: faceWidth * 0.15,
+        radius: faceWidth * 0.13,
         ax: (dx0 * 0.08) * smileFactor, ay: (dy0 * 0.08) * smileFactor
       },
-      // --- 目の下の押し上げ（三日月目） ---
-      // 右目下 (145付近)
-      {
-        x: mappedLandmarks[145].x, y: mappedLandmarks[145].y,
-        radius: faceWidth * 0.05,
-        ax: 0, ay: (-dy0 * 0.04) * smileFactor
-      },
-      // 左目下 (374付近)
-      {
-        x: mappedLandmarks[374].x, y: mappedLandmarks[374].y,
-        radius: faceWidth * 0.05,
-        ax: 0, ay: (-dy0 * 0.04) * smileFactor
-      }
     ];
 
     let deformedLandmarks;
@@ -228,7 +259,7 @@ export const deformFace = (ctx, faceInfo) => {
       });
 
       // メッシュの三角形群を転送
-      FACE_MESH.forEach((item) => {
+      FACE_MESH_2.forEach((item) => {
         const [i0, i1, i2] = item;
 
         // 変形前の三角形
@@ -278,10 +309,11 @@ export const deformFace = (ctx, faceInfo) => {
       if (false) {
         offscreenCtx.lineWidth = 4;
         gravity.forEach(point => {
-          // 1. 頂点（小さな円）を描画
+          // 重力の位置を描画
           offscreenCtx.beginPath();
           offscreenCtx.arc(point.x, point.y, point.radius, 0, 2 * Math.PI);
           offscreenCtx.stroke();
+          // 重力の向きを描画
           offscreenCtx.beginPath();
           offscreenCtx.moveTo(point.x, point.y);
           offscreenCtx.lineTo(point.x + point.ax, point.y + point.ay);
