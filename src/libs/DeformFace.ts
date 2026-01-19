@@ -241,13 +241,13 @@ export const deformFace = (ctx, faceInfo) => {
       {
         x: mappedLandmarks[145].x, y: mappedLandmarks[145].y,
         radius: faceWidth * 0.08,
-        ax: (-dx0 * 0.03) * smileFactor, ay: (-dy0 * 0.03) * smileFactor
+        ax: (-dx0 * 0.02) * smileFactor, ay: (-dy0 * 0.02) * smileFactor
       },
       // 左目下 (374付近)
       {
         x: mappedLandmarks[374].x, y: mappedLandmarks[374].y,
         radius: faceWidth * 0.08,
-        ax: (-dx0 * 0.03) * smileFactor, ay: (-dy0 * 0.03) * smileFactor
+        ax: (-dx0 * 0.02) * smileFactor, ay: (-dy0 * 0.02) * smileFactor
       },
       // --- 口角の変形 ---
       // 右口角 (61) を外側斜め上へ
