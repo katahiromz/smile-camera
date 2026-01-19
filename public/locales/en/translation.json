@@ -20,7 +20,7 @@
   "camera_no_camera_found_2": "There is no accessible camera. Please check the camera connection, allow camera permission in the app settings, and restart the app.",
   "camera_no_camera_permission": "This app has no camera permission.",
   "camera_no_camera_permission_2": "Please allow camera permission in the app settings and restart the app.",
-  "camera_starting_camera": "Starting camera...",
+  "camera_starting_camera": "The Smile Mirror",
   "camera_switching_camera": "Switching camera...",
   "camera_taking_photo_failed": "Failed to save photo.",
   "camera_recording_error": "Recording error: {{error}}",

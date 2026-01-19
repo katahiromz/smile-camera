@@ -20,7 +20,7 @@
   "camera_no_camera_found_2": "アクセス可能なカメラがありません。カメラの接続を確認し、アプリ設定のカメラ権限を許可にして、アプリを再起動してください。",
   "camera_no_camera_permission": "カメラ権限がありません。",
   "camera_no_camera_permission_2": "アプリ設定でカメラ権限を許可してアプリを再起動してください。",
-  "camera_starting_camera": "カメラ起動中...",
+  "camera_starting_camera": "ほほえみの鏡",
   "camera_switching_camera": "カメラ切り替え中...",
   "camera_taking_photo_failed": "写真の保存に失敗しました。",
   "camera_recording_error": "録画エラー: {{error}}",
