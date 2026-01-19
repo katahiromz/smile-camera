@@ -171,7 +171,17 @@ export const deformFace = (ctx, faceInfo) => {
     let dy0 = mappedLandmarks[10].y - mappedLandmarks[152].y;
     let dx1 = mappedLandmarks[454].x - mappedLandmarks[234].x;
     let dy1 = mappedLandmarks[454].y - mappedLandmarks[234].y;
-    const faceWidth = Math.sqrt(dx1 * dx1 + dy1 * dy1); // 顔の横幅を基準スケールとする
+    const faceHeight = Math.sqrt(dx0 * dx0 + dy0 * dy0);
+    const faceWidth = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+
+    const getLength = (i0, i1) => {
+      let dx = mappedLandmarks[i1].x - mappedLandmarks[i0].x;
+      let dy = mappedLandmarks[i1].y - mappedLandmarks[i0].y;
+      return Math.sqrt(dx*dx + dy*dy);
+    };
+
+    let len1 = getLength(165, 61);
+    let len2 = getLength(391, 291);
 
     if (false) {
       // 顔の上と下
@@ -243,14 +253,16 @@ export const deformFace = (ctx, faceInfo) => {
       // 右口角 (61) を外側斜め上へ
       {
         x: mappedLandmarks[61].x, y: mappedLandmarks[61].y,
-        radius: faceWidth * 0.11,
-        ax: (-dx1 * 0.08) * smileFactor, ay: (dy0 * 0.08) * smileFactor
+        radius: Math.abs(dx1) * 0.08,
+        ax: 20 * ((-dx0 * 0.1) + (-dx1 * 0.1)) / (5 + len1),
+        ay: 20 * ((dy0 * 0.1) + (dy1 * 0.1)) / (5 + len1)
       },
       // 左口角 (291) を外側斜め上へ
       {
         x: mappedLandmarks[291].x, y: mappedLandmarks[291].y,
-        radius: faceWidth * 0.11,
-        ax: (dx1 * 0.08) * smileFactor, ay: (dy0 * 0.08) * smileFactor
+        radius: Math.abs(dx1) * 0.08,
+        ax: 20 * ((dx0 * 0.1) + (dx1 * 0.1)) / (2 + len2),
+        ay: 20 * ((dy0 * 0.1) + (dy1 * 0.1)) / (2 + len2)
       },
       // --- 頬の押し上げ ---
       // 右頬 (205付近)
