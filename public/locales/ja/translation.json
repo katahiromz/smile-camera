@@ -34,12 +34,5 @@
   "camera_url_access": "URLを参照",
   "camera_code_reader_starting": "QRコード読み取り準備中...",
   "settings_page": "設定",
-  "privacy_mode": "プライバシー モード",
-  "eye_mask": "黒目線",
-  "face_blur": "ぼかし",
-  "black_out": "黒塗り",
-  "mosaic": "モザイク",
-  "back": "戻る",
-  "face": "顔",
-  "no_settings": "設定項目はありません。"
+  "no_settings": "設定項目はまだありません。"
 }

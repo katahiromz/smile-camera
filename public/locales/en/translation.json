@@ -34,12 +34,5 @@
   "camera_url_access": "Refer to URL",
   "camera_code_reader_starting": "Starting QR code reader...",
   "settings_page": "Settings",
-  "privacy_mode": "Privacy Mode",
-  "eye_mask": "Eye Mask",
-  "face_blur": "Face Blur",
-  "black_out": "Blackout",
-  "mosaic": "Mosaic",
-  "back": "Back",
-  "face": "Face",
-  "no_settings": "No settings."
+  "no_settings": "No settings yet."
 }

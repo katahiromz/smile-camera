@@ -11,7 +11,9 @@ interface FaceInfo {
 
 let offscreenCanvas = null;
 
-const FACE_MESH_2 = [...FACE_MESH,
+// 目と口の中のメッシュが足りないので拡張
+const FACE_MESH_EX = [...FACE_MESH,
+  // 右目
   [33, 246, 7],
   [7, 246, 163],
   [246, 163, 161],
@@ -25,6 +27,7 @@ const FACE_MESH_2 = [...FACE_MESH,
   [157, 154, 155],
   [155, 157, 173],
   [173, 155, 133],
+  // 左目
   [362, 398, 382],
   [398, 382, 384],
   [382, 384, 381],
@@ -39,6 +42,29 @@ const FACE_MESH_2 = [...FACE_MESH,
   [390, 388, 466],
   [466, 390, 249],
   [466, 249, 263],
+  // 口
+  [62, 191, 78],
+  [62, 95, 78],
+  [78, 191, 95],
+  [191, 95, 80],
+  [80, 88, 95],
+  [80, 88, 81],
+  [88, 81, 178],
+  [81, 178, 82],
+  [82, 178, 87],
+  [82, 87, 13],
+  [87, 13, 14],
+  [13, 14, 317],
+  [13, 317, 312],
+  [317, 312, 402],
+  [402, 312, 311],
+  [311, 402, 318],
+  [318, 311, 310],
+  [318, 310, 324],
+  [310, 324, 415],
+  [415, 324, 308],
+  [415, 308, 292],
+  [324, 308, 292],
 ];
 
 // 顔のほてりを表現
@@ -103,7 +129,7 @@ export const deformFace = (ctx, faceInfo) => {
     if (false) {
       offscreenCtx.lineWidth = 2;
       offscreenCtx.strokeStyle = "green";
-      FACE_MESH_2.forEach((item) => {
+      FACE_MESH_EX.forEach((item) => {
         const [i0, i1, i2] = item;
         offscreenCtx.beginPath();
         offscreenCtx.moveTo(mappedLandmarks[i0].x, mappedLandmarks[i0].y);
@@ -259,7 +285,7 @@ export const deformFace = (ctx, faceInfo) => {
       });
 
       // メッシュの三角形群を転送
-      FACE_MESH_2.forEach((item) => {
+      FACE_MESH_EX.forEach((item) => {
         const [i0, i1, i2] = item;
 
         // 変形前の三角形
@@ -325,7 +351,7 @@ export const deformFace = (ctx, faceInfo) => {
   }
 
   let cxy = Math.max(width, height) * Math.sqrt(2);
-  drawLight(offscreenCtx, width / 2, height / 2, cxy / 2, "rgba(255, 255, 0, 0%)", "rgba(255, 255, 0, 30%)");
+  drawLight(offscreenCtx, width / 2, height / 2, cxy / 2, "rgba(255, 255, 0, 0%)", `rgba(255, 255, 0, ${25 + 5 * Math.sin(performance.now() / 100)}%)`);
 
   // 元のキャンバスへ転送
   ctx.drawImage(offscreenCanvas, 0, 0);
