@@ -26,6 +26,21 @@ const drawFaceFeat = (ctx, x, y, radius) => {
   ctx.fill();
 };
 
+const drawLight = (ctx, x, y, radius, color1, color2) => {
+  // 放射状のグラデーションを作る
+  let rInner = 0, rOuter = radius;
+  const g = ctx.createRadialGradient(x, y, rInner, x, y, rOuter);
+  g.addColorStop(0, color1);
+  g.addColorStop(0.3, color1);
+  g.addColorStop(1, color2);
+
+  // 半透明のグラデーション（影）を付ける
+  ctx.beginPath();
+  ctx.arc(x, y, rOuter, 0, 2 * Math.PI, false);
+  ctx.fillStyle = g;
+  ctx.fill();
+};
+
 // 顔変形を行う関数
 export const deformFace = (ctx, faceInfo) => {
   // キャンバスをオフスクリーンにコピー
@@ -153,7 +168,7 @@ export const deformFace = (ctx, faceInfo) => {
 
     let deformedLandmarks = null;
     // 重力（変形の中心点と移動ベクトル）の設定
-    const factor = 2;
+    const factor = 1.5;
     const gravity = [
       { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, radius: Math.abs(dy0) * 0.06, ax: (dx0 * 0.015 - dx1 * 0.015)*factor, ay: (dy0 * 0.015 - dy1 * 0.015)*factor },
       { x: mappedLandmarks[61].x, y: mappedLandmarks[61].y, radius: Math.abs(dy0) * 0.03, ax: (dx0 * 0.015 - dx1 * 0.012)*factor, ay: (dy0 * 0.015 - dy1 * 0.012)*factor },
@@ -242,6 +257,9 @@ export const deformFace = (ctx, faceInfo) => {
       }
     }
   }
+
+  let cxy = Math.max(width, height) * Math.sqrt(2);
+  drawLight(offscreenCtx, width / 2, height / 2, cxy / 2, "rgba(255, 255, 0, 0%)", "rgba(255, 255, 0, 30%)");
 
   // 元のキャンバスへ転送
   ctx.drawImage(offscreenCanvas, 0, 0);

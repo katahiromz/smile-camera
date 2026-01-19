@@ -6,32 +6,19 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import './SettingsPage.css';
 
-export type PrivacyMode = 'eyeMask' | 'faceBlur' | 'blackout' | 'mosaic';
-
 // アプリケーションのベースパスを取得
 const BASE_URL = import.meta.env.BASE_URL;
 
 interface SettingsPageProps {
-  privacyMode: PrivacyMode;
-  onPrivacyModeChange: (mode: PrivacyMode) => void;
   onBack: () => void;
   isClosing?: boolean;
 }
 
 const SettingsPage: React.FC<SettingsPageProps> = ({
-  privacyMode,
-  onPrivacyModeChange,
   onBack,
   isClosing = false
 }) => {
   const { t } = useTranslation();
-
-  const handleModeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === 'eyeMask' || value === 'faceBlur' || value === 'blackout' || value === 'mosaic') {
-      onPrivacyModeChange(value);
-    }
-  };
 
   return (
     <div className={`settings-page ${isClosing ? 'closing' : ''}`}>
@@ -56,17 +43,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({
         </div>
         <hr />
         <div className="setting-item">
-          <label htmlFor="privacy-mode">{t('privacy_mode')}</label>
-          <select
-            id="privacy-mode" 
-            value={privacyMode}
-            onChange={handleModeChange}
-          >
-            <option value="eyeMask">{t('eye_mask')}</option>
-            <option value="faceBlur">{t('face_blur')}</option>
-            <option value="blackout">{t('black_out')}</option>
-            <option value="mosaic">{t('mosaic')}</option>
-          </select>
+          {t('no_settings')}
         </div>
       </div>
     </div>

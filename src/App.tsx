@@ -3,7 +3,7 @@
 // License: MIT
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import CanvasWithWebcam03, { ImageProcessData, CanvasWithWebcam03Handle } from './components/CanvasWithWebcam03';
-import SettingsPage, { PrivacyMode } from './components/SettingsPage';
+import SettingsPage from './components/SettingsPage';
 import { QRResult } from './libs/CodeReader';
 import { isAndroidApp, emulateInsets, saveMedia, saveMediaEx, polyfillGetUserMedia,
          getLocalDateTimeString, drawLineAsPolygon, cloneCanvas } from './libs/utils';
@@ -138,36 +138,9 @@ function App() {
   const qrResultsRef = useRef<QRResult[]>([]); // QRコード読み取り結果（CanvasWithWebcam03に渡すため）
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
 
-  // プライバシーモードの状態管理
-  const [privacyMode, setPrivacyMode] = useState<PrivacyMode>(() => {
-    try {
-      const saved = localStorage.getItem(PRIVACY_MODE_KEY);
-      return (saved === 'eyeMask' || saved === 'faceBlur' || saved === 'blackout' || saved === 'mosaic') ? saved : 'eyeMask';
-    } catch (error) {
-      console.warn('localStorage not available:', error);
-      return 'eyeMask';
-    }
-  });
-
-  // プライバシーモードのRefを作成して常に最新の値を参照
-  const privacyModeRef = useRef(privacyMode);
-  useEffect(() => {
-    privacyModeRef.current = privacyMode;
-  }, [privacyMode]);
-
   // 設定ページの表示状態
   const [showSettings, setShowSettings] = useState(false);
   const [isClosingSettings, setIsClosingSettings] = useState(false);
-
-  // プライバシーモード変更時の処理
-  const handlePrivacyModeChange = (mode: PrivacyMode) => {
-    setPrivacyMode(mode);
-    try {
-      localStorage.setItem(PRIVACY_MODE_KEY, mode);
-    } catch (error) {
-      console.warn('localStorage not available:', error);
-    }
-  };
 
   // 画像処理関数
   const onImageProcess = useCallback(async (data: ImageProcessData) => {
@@ -426,8 +399,6 @@ function App() {
     <>
       {showSettings && (
         <SettingsPage
-          privacyMode={privacyMode}
-          onPrivacyModeChange={handlePrivacyModeChange}
           onBack={handleCloseSettings}
           isClosing={isClosingSettings}
         />
