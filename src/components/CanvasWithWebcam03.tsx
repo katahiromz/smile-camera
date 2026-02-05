@@ -297,7 +297,7 @@ const CanvasWithWebcam03 = forwardRef<CanvasWithWebcam03Handle, CanvasWithWebcam
     const oldFacingMode = localStorage.getItem(CAMERA_FACING_MODE_KEY);
     if (oldFacingMode === 'user' || oldFacingMode === 'environment')
       return oldFacingMode;
-    return 'environment';
+    return 'user';
   })()); // カメラの前面・背面
   const [isSwitching, setIsSwitching] = useState(false); // カメラ切り替え中？
   const [isInitialized, setIsInitialized] = useState(false); // 初期化済みか？
