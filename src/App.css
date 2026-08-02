@@ -43,3 +43,76 @@ body {
   right: var(--safe-inset-right, 0px);
   bottom: var(--safe-inset-bottom, 0px);
 }
+
+/* TopSnackbarWeb */
+@keyframes top-snackbar-in {
+  from {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes top-snackbar-out {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-110%);
+    opacity: 0;
+  }
+}
+
+.top-snackbar-web {
+  position: fixed;
+  top: var(--safe-inset-top, 0px);
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  background-color: #323232;
+  color: #fff;
+  padding: 12px 8px 12px 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  animation: top-snackbar-in 0.3s ease forwards;
+}
+
+.top-snackbar-web.dismissing {
+  animation: top-snackbar-out 0.25s ease forwards;
+}
+
+.top-snackbar-web-message {
+  flex: 1;
+  font-size: 14px;
+}
+
+.top-snackbar-web-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.top-snackbar-web-action-btn {
+  background: none;
+  border: none;
+  color: #64B5F6;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.top-snackbar-web-close-btn {
+  background: none;
+  border: none;
+  color: #aaa;
+  font-size: 14px;
+  padding: 8px;
+  cursor: pointer;
+}
