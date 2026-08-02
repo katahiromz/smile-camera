@@ -34,5 +34,9 @@
   "camera_url_access": "URLを参照",
   "camera_code_reader_starting": "QRコード読み取り準備中...",
   "settings_page": "設定",
-  "no_settings": "設定項目はまだありません。"
+  "no_settings": "設定項目はまだありません。",
+  "camera_photo_saved": "写真を保存しました。",
+  "camera_video_saved": "動画を保存しました。",
+  "camera_audio_saved": "音声を保存しました。",
+  "camera_open_file": "開く"
 }

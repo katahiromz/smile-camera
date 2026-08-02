@@ -34,5 +34,9 @@
   "camera_url_access": "Refer to URL",
   "camera_code_reader_starting": "Starting QR code reader...",
   "settings_page": "Settings",
-  "no_settings": "No settings yet."
+  "no_settings": "No settings yet.",
+  "camera_photo_saved": "Photo saved.",
+  "camera_video_saved": "Video saved.",
+  "camera_audio_saved": "Audio saved.",
+  "camera_open_file": "OPEN"
 }

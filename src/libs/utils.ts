@@ -136,18 +136,49 @@ export const clamp = (minValue: number, value: number, maxValue: number) => {
   return Math.max(minValue, Math.min(value, maxValue));
 };
 
+// DownloadedMediaType: ダウンロードされたメディアの種類
+export type DownloadedMediaType = 'video' | 'photo' | 'audio';
+
+// DownloadCompleteDetail: ダウンロード完了イベントの詳細
+export interface DownloadCompleteDetail {
+  type: DownloadedMediaType;
+  fileName: string;
+  mimeType: string;
+}
+
+// ダウンロード完了イベント名を取得する
+export const getDownloadCompleteEventName = (): string => {
+  return 'smilecamera:downloadComplete';
+};
+
+// ダウンロード完了イベントを発火する
+export const dispatchDownloadComplete = (detail: DownloadCompleteDetail): void => {
+  window.dispatchEvent(new CustomEvent<DownloadCompleteDetail>(getDownloadCompleteEventName(), { detail }));
+};
+
+// URLを開けるかチェックする
+export const canAccessOpenUrl = (url: string): boolean => {
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 // ファイルを保存する
-export const saveMedia = (blob: Blob, fileName: string, mimeType: string, type: 'video' | 'photo' | 'audio') => {
+export const saveMedia = (blob: Blob, fileName: string, mimeType: string, type: DownloadedMediaType) => {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.download = fileName;
   link.href = url;
   link.click();
-  URL.revokeObjectURL(url);
+  dispatchDownloadComplete({ type, fileName, mimeType });
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 };
 
 // ファイルを保存する(拡張版)
-export const saveMediaEx = (blob: Blob, fileName: string, mimeType: string, type: 'video' | 'photo' | 'audio') => {
+export const saveMediaEx = (blob: Blob, fileName: string, mimeType: string, type: DownloadedMediaType) => {
   if (!isAndroidApp)
     return saveMedia(blob, fileName, mimeType, type);
   const reader = new FileReader();
@@ -163,6 +194,7 @@ export const saveMediaEx = (blob: Blob, fileName: string, mimeType: string, type
     try {
       window.android?.saveMediaToGallery(base64data, fileName, mimeType, type);
       console.log(`Saved ${type}:`, fileName);
+      dispatchDownloadComplete({ type, fileName, mimeType });
     } catch (error) {
       console.assert(false);
       console.error('android インタフェース呼び出しエラー:', error);

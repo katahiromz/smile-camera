@@ -4,9 +4,11 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import CanvasWithWebcam03, { ImageProcessData, CanvasWithWebcam03Handle } from './components/CanvasWithWebcam03';
 import SettingsPage from './components/SettingsPage';
+import TopSnackbarWeb from './components/TopSnackbarWeb';
 import { QRResult } from './libs/CodeReader';
 import { isAndroidApp, emulateInsets, saveMedia, saveMediaEx, polyfillGetUserMedia,
-         getLocalDateTimeString, drawLineAsPolygon, cloneCanvas } from './libs/utils';
+         getLocalDateTimeString, drawLineAsPolygon, cloneCanvas,
+         getDownloadCompleteEventName, DownloadCompleteDetail } from './libs/utils';
 import { FaceLandmarker, FilesetResolver, FaceLandmarkerResult, NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { deformFace } from './libs/DeformFace';
 import './App.css';
@@ -141,6 +143,9 @@ function App() {
   // 設定ページの表示状態
   const [showSettings, setShowSettings] = useState(false);
   const [isClosingSettings, setIsClosingSettings] = useState(false);
+
+  // ダウンロード完了通知
+  const [downloadNotice, setDownloadNotice] = useState<DownloadCompleteDetail | null>(null);
 
   // 画像処理関数
   const onImageProcess = useCallback(async (data: ImageProcessData) => {
@@ -346,9 +351,19 @@ function App() {
     return () => document.body.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // ブラウザの「戻る」ボタンに対応する
+  // ダウンロード完了イベントを受信してSnackbarを表示する
   useEffect(() => {
-    // 直前の履歴に現在のページを追加
+    const handleDownloadComplete = (e: Event) => {
+      const detail = (e as CustomEvent<DownloadCompleteDetail>).detail;
+      setDownloadNotice(detail);
+    };
+    const eventName = getDownloadCompleteEventName();
+    window.addEventListener(eventName, handleDownloadComplete);
+    return () => window.removeEventListener(eventName, handleDownloadComplete);
+  }, []);
+
+  // ブラウザの「戻る」ボタンに対応する
+  useEffect(() => {    // 直前の履歴に現在のページを追加
     window.history.pushState(null, '', window.location.href);
 
     const handleBack = (event: PopStateEvent) => {
@@ -397,6 +412,23 @@ function App() {
 
   return (
     <>
+      {downloadNotice && (
+        <TopSnackbarWeb
+          message={
+            downloadNotice.type === 'video' ? t('camera_video_saved') :
+            downloadNotice.type === 'audio' ? t('camera_audio_saved') :
+            t('camera_photo_saved')
+          }
+          actionLabel={t('camera_open_file')}
+          onAction={() => {
+            if (downloadNotice) {
+              // Web環境ではopenURLで開く（対応していればAndroidのopenURL経由）
+              window.android?.openURL?.(downloadNotice.fileName);
+            }
+          }}
+          onClose={() => setDownloadNotice(null)}
+        />
+      )}
       {showSettings && (
         <SettingsPage
           onBack={handleCloseSettings}
