@@ -419,13 +419,8 @@ function App() {
             downloadNotice.type === 'audio' ? t('camera_audio_saved') :
             t('camera_photo_saved')
           }
-          actionLabel={t('camera_open_file')}
-          onAction={() => {
-            if (downloadNotice) {
-              // Web環境ではopenURLで開く（対応していればAndroidのopenURL経由）
-              window.android?.openURL?.(downloadNotice.fileName);
-            }
-          }}
+          actionLabel={null}
+          onAction={null}
           onClose={() => setDownloadNotice(null)}
         />
       )}
